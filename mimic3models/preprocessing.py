@@ -31,7 +31,7 @@ class Discretizer:
         self._done_count = 0
         self._empty_bins_sum = 0
         self._unused_data_sum = 0
-        self.pr = cProfile.Profile()
+        #self.pr = cProfile.Profile()
 
 
     def transform(self, X, header=None, end=None):

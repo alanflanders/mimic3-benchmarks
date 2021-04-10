@@ -28,6 +28,12 @@ parser.add_argument('--data', type=str, help='Path to the data of length-of-stay
                     default=os.path.join(os.path.dirname(__file__), '../../data/length-of-stay/'))
 parser.add_argument('--output_dir', type=str, help='Directory relative which all output files are stored',
                     default='.')
+parser.add_argument('--train_batches', type=int, default=500,
+    help='number of batches to train on per epoch')
+parser.add_argument('--val_batches', type=int, default=200,
+    help='number of batches to validate on per epoch')
+parser.add_argument('--workers', type=int, default=1,
+    help='number of workers to load data')
 args = parser.parse_args()
 print(args)
 
@@ -125,8 +131,8 @@ else:
     # aflanders: Set step count lower than pause count
     # train_nbatches = 2000
     # val_nbatches = 1000
-    train_nbatches = 1
-    val_nbatches = 1
+    train_nbatches = args.train_batches
+    val_nbatches = args.val_batches
     # aflanders: Set step count lower than pause count
     if args.small_part:
         train_nbatches = 20
@@ -194,8 +200,8 @@ if args.mode == 'train':
             initial_epoch=n_trained_chunks,
             callbacks=[metrics_callback, saver, csv_logger],
             verbose=args.verbose,
-            workers=1,
-            use_multiprocessing=False)
+            workers=args.workers,
+            use_multiprocessing=True)
     print("==> /training")
 
     discretizer.print_statistics()

@@ -18,19 +18,22 @@
             "module": "mimic3models.length_of_stay.main",
             "args": [
                 "--network", "mimic3models/keras_models/lstm.py",
-                "--dim", "16",
+                "--dim", "64",
                 "--timestep", "1.0",
                 "--depth", "1",
                 "--dropout", "0.3",
                 "--mode", "train",
-                "--batch_size", "512",
+                "--batch_size", "256",
                 "--partition", "custom",
                 "--verbose", "1",
                 "--save_every", "1000",
                 "--epochs", "1",
+                "--train_batches", "200",
+                "--val_batches", "50",
+                "--workers", "3",
                 "--data", "/mnt/data01/mimic-3/benchmark/length-of-stay",
                 "--output_dir", "/mnt/data01/mimic-3/benchmark/length-of-stay/lstm",
-                "&>", "lstm44.log"
+                //"&>", "lstm44.log"
             ],
             "console": "integratedTerminal"
         },

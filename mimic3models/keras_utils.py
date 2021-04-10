@@ -164,7 +164,7 @@ class PhenotypingMetrics(keras.callbacks.Callback):
 
 class LengthOfStayMetrics(keras.callbacks.Callback):
     def __init__(self, train_data_gen, val_data_gen, partition, batch_size=32,
-                 early_stopping=True, verbose=2):
+                 early_stopping=True, verbose=2, workers=1):
         super(LengthOfStayMetrics, self).__init__()
         self.train_data_gen = train_data_gen
         self.val_data_gen = val_data_gen
@@ -174,6 +174,7 @@ class LengthOfStayMetrics(keras.callbacks.Callback):
         self.verbose = verbose
         self.train_history = []
         self.val_history = []
+        self.workers = workers
     
     #@tf.function(experimental_relax_shapes=True)
     def calc_metrics(self, data_gen, history, dataset, logs):
@@ -195,8 +196,8 @@ class LengthOfStayMetrics(keras.callbacks.Callback):
                                 batch_size=self.batch_size, 
                                 verbose=self.verbose, 
                                 steps=data_gen.steps,
-                                workers=1,
-                                use_multiprocessing=False)
+                                workers=self.workers,
+                                use_multiprocessing=True)
         # if isinstance(x, list) and len(x) == 2:  # deep supervision
         #     if pred.shape[-1] == 1:  # regression
         #         pred_flatten = pred.flatten()
