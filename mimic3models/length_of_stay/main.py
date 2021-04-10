@@ -88,9 +88,10 @@ print("==> model.final_name:", model.final_name)
 
 # Compile the model
 print("==> compiling the model")
-optimizer_config = {'class_name': args.optimizer,
-                    'config': {'lr': args.lr,
-                               'beta_1': args.beta_1}}
+# optimizer_config = {'class_name': args.optimizer,
+#                     'config': {'learning_rate': args.lr,
+#                                'beta_1': args.beta_1}}
+optimizer_config = args.optimizer
 
 if args.partition == 'none':
     # other options are: 'mean_squared_error', 'mean_absolute_percentage_error'
@@ -101,6 +102,7 @@ else:
 #       that's why we use sparse_categorical_crossentropy
 # NOTE: it is ok to use keras.losses even for (B, T, D) shapes
 
+print(optimizer_config)
 model.compile(optimizer=optimizer_config,
               loss=loss_function)
 model.summary()
@@ -120,8 +122,12 @@ if args.deep_supervision:
                                                  discretizer, normalizer, args.batch_size, shuffle=False)
 else:
     # Set number of batches in one epoch
-    train_nbatches = 2000
-    val_nbatches = 1000
+    # aflanders: Set step count lower than pause count
+    # train_nbatches = 2000
+    # val_nbatches = 1000
+    train_nbatches = 1
+    val_nbatches = 1
+    # aflanders: Set step count lower than pause count
     if args.small_part:
         train_nbatches = 20
         val_nbatches = 20
@@ -142,7 +148,10 @@ else:
                                   shuffle=False)
 if args.mode == 'train':
     # Prepare training
+    #aflanders: debug
     path = os.path.join(args.output_dir, 'keras_states/' + model.final_name + '.chunk{epoch}.test{val_loss}.state')
+    # path = os.path.join(args.output_dir, 'keras_states/' + model.final_name + '.chunk{epoch}.test.state')
+    #aflanders: debug
 
     metrics_callback = keras_utils.LengthOfStayMetrics(train_data_gen=train_data_gen,
                                                        val_data_gen=val_data_gen,
@@ -153,8 +162,11 @@ if args.mode == 'train':
     dirname = os.path.dirname(path)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    saver = ModelCheckpoint(path, verbose=1, period=args.save_every)
-
+    #aflanders: remove warning
+    #saver = ModelCheckpoint(path, verbose=1, period=args.save_every)
+    saver = ModelCheckpoint(path, verbose=1, save_freq=args.save_every)
+    #aflanders: remove warning
+    
     keras_logs = os.path.join(args.output_dir, 'keras_logs')
     if not os.path.exists(keras_logs):
         os.makedirs(keras_logs)
@@ -162,14 +174,32 @@ if args.mode == 'train':
                            append=True, separator=';')
 
     print("==> training")
-    model.fit_generator(generator=train_data_gen,
-                        steps_per_epoch=train_data_gen.steps,
-                        validation_data=val_data_gen,
-                        validation_steps=val_data_gen.steps,
-                        epochs=n_trained_chunks + args.epochs,
-                        initial_epoch=n_trained_chunks,
-                        callbacks=[metrics_callback, saver, csv_logger],
-                        verbose=args.verbose)
+    #aflanders: debug - remove warning and use model.fit()
+    # model.fit_generator(generator=train_data_gen,
+    #                     steps_per_epoch=train_data_gen.steps,
+    #                     validation_data=val_data_gen,
+    #                     validation_steps=val_data_gen.steps,
+    #                     epochs=n_trained_chunks + args.epochs,
+    #                     initial_epoch=n_trained_chunks,
+    #                     callbacks=[metrics_callback, saver, csv_logger],
+    #                     verbose=args.verbose)
+    # import cProfile
+    # cProfile.run('history = model.fit(x=train_data_gen, steps_per_epoch=train_data_gen.steps, epochs=n_trained_chunks + args.epochs, initial_epoch=n_trained_chunks, callbacks=[metrics_callback, saver, csv_logger], verbose=args.verbose, workers=1, use_multiprocessing=False)')
+
+    history = model.fit(x=train_data_gen,
+            steps_per_epoch=train_data_gen.steps,
+            #validation_data=val_data_gen,
+            #validation_steps=val_data_gen.steps,
+            epochs=n_trained_chunks + args.epochs,
+            initial_epoch=n_trained_chunks,
+            callbacks=[metrics_callback, saver, csv_logger],
+            verbose=args.verbose,
+            workers=1,
+            use_multiprocessing=False)
+    print("==> /training")
+
+    discretizer.print_statistics()
+    #aflanders: debug - remove warning and use model.fit()
 
 elif args.mode == 'test':
     # ensure that the code uses test_reader
